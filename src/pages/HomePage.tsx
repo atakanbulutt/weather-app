@@ -14,6 +14,7 @@ const HomePage: React.FC = () => {
     forecast, 
     loading, 
     error, 
+    locationPermission,
     fetchWeatherByCity, 
     fetchWeatherByLocation, 
     getUserLocation 
@@ -42,6 +43,12 @@ const HomePage: React.FC = () => {
         }
       }
 
+      // Mobil cihazlarda konum izni kontrolü
+      if (locationPermission === 'denied') {
+        console.log('Location permission denied, skipping automatic location fetch');
+        return;
+      }
+
       try {
         hasInitialized.current = true;
         console.log('Fetching initial location weather...');
@@ -54,7 +61,7 @@ const HomePage: React.FC = () => {
     };
 
     getInitialLocation();
-  }, [currentWeather, fetchWeatherByLocation, getUserLocation]); // ESLint için dependencies eklendi
+  }, [currentWeather, fetchWeatherByLocation, getUserLocation, locationPermission]); // ESLint için dependencies eklendi
 
   const handleSearch = async (city: string) => {
     await fetchWeatherByCity(city);
@@ -67,6 +74,22 @@ const HomePage: React.FC = () => {
     } catch (err) {
       console.error('Location error:', err);
     }
+  };
+
+  // Konum izni reddedildiğinde gösterilecek mesaj
+  const renderLocationPermissionMessage = () => {
+    if (locationPermission === 'denied') {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="location-permission-message"
+        >
+          <p>📍 Konum izni reddedildi. Hava durumu bilgisi için şehir adı ile arama yapabilirsiniz.</p>
+        </motion.div>
+      );
+    }
+    return null;
   };
 
   return (
@@ -91,6 +114,8 @@ const HomePage: React.FC = () => {
 
       <main className="main-content">
         <SearchBar onSearch={handleSearch} onLocationSearch={handleLocationSearch} />
+        
+        {renderLocationPermissionMessage()}
         
         {loading && (
           <motion.div

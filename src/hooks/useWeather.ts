@@ -8,6 +8,7 @@ export const useWeather = () => {
   const [currentWeather, setCurrentWeather] = useState<WeatherData | null>(null);
   const [forecast, setForecast] = useState<ForecastData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt' | 'unknown'>('unknown');
   const { language } = useLanguage();
   const queryClient = useQueryClient();
 
@@ -30,6 +31,19 @@ export const useWeather = () => {
       localStorage.setItem('currentWeather', JSON.stringify(currentWeather));
     }
   }, [currentWeather]);
+
+  // Geolocation izin durumunu kontrol et
+  useEffect(() => {
+    if ('permissions' in navigator) {
+      navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+        setLocationPermission(result.state);
+        
+        result.addEventListener('change', () => {
+          setLocationPermission(result.state);
+        });
+      });
+    }
+  }, []);
 
   // React Query ile weather data fetching - daha stabil query key
   const weatherQuery = useQuery({
@@ -151,9 +165,16 @@ export const useWeather = () => {
   const getUserLocation = useCallback((): Promise<{ lat: number; lon: number }> => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
-        reject(new Error('Geolocation desteklenmiyor'));
+        reject(new Error('Bu tarayıcı konum servisini desteklemiyor. Lütfen şehir adı ile arama yapın.'));
         return;
       }
+
+      // Mobil için daha uzun timeout
+      const options = {
+        enableHighAccuracy: true,
+        timeout: 10000, // 10 saniye
+        maximumAge: 300000 // 5 dakika cache
+      };
 
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -163,8 +184,25 @@ export const useWeather = () => {
           });
         },
         (error) => {
-          reject(new Error('Konum alınamadı'));
-        }
+          let errorMessage = 'Konum alınamadı';
+          
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = 'Konum izni reddedildi. Lütfen tarayıcı ayarlarından konum iznini etkinleştirin veya şehir adı ile arama yapın.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = 'Konum bilgisi mevcut değil. Lütfen şehir adı ile arama yapın.';
+              break;
+            case error.TIMEOUT:
+              errorMessage = 'Konum alımı zaman aşımına uğradı. Lütfen tekrar deneyin veya şehir adı ile arama yapın.';
+              break;
+            default:
+              errorMessage = 'Konum alınamadı. Lütfen şehir adı ile arama yapın.';
+          }
+          
+          reject(new Error(errorMessage));
+        },
+        options
       );
     });
   }, []);
@@ -187,6 +225,7 @@ export const useWeather = () => {
     forecast: forecastQuery.data || forecast,
     loading: isLoading,
     error: combinedError,
+    locationPermission,
     fetchWeatherByCity,
     fetchWeatherByLocation,
     getUserLocation,
