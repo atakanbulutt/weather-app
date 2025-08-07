@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { translations } from '../i18n/translations';
-import { SavedCity, WeatherData } from '../types/weather';
+import { SavedCity } from '../types/weather';
 import { WeatherService } from '../services/weatherService';
 import { motion } from 'framer-motion';
 

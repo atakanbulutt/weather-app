@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useWeather } from '../hooks/useWeather';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -38,7 +38,7 @@ const HomePage: React.FC = () => {
     };
 
     getInitialLocation();
-  }, []); // Sadece component mount olduğunda çalışsın
+  }, [currentWeather, fetchWeatherByLocation, getUserLocation]); // Dependencies eklendi
 
   const handleSearch = async (city: string) => {
     await fetchWeatherByCity(city);

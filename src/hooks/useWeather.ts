@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { WeatherService } from '../services/weatherService';
 import { WeatherData, ForecastData } from '../types/weather';
 import { useLanguage } from '../contexts/LanguageContext';
