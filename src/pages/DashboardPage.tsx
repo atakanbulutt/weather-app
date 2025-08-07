@@ -11,6 +11,7 @@ const DashboardPage: React.FC = () => {
   const [newCity, setNewCity] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null); 
   const { language } = useLanguage();
   const t = translations[language];
 
@@ -56,11 +57,11 @@ const DashboardPage: React.FC = () => {
 
     setLoading(true);
     setError(null);
+    setSuccess(null);
 
     try {
       const weatherData = await WeatherService.getCurrentWeather(newCity, 'metric', language === 'tr' ? 'tr' : 'en');
       
-      // Duplicate şehir kontrolü - BU SATIRI EKLİYORUM
       const isDuplicate = savedCities.some(city => 
         city.name.toLowerCase() === weatherData.name.toLowerCase() ||
         (city.country && weatherData.sys.country && 
@@ -70,6 +71,9 @@ const DashboardPage: React.FC = () => {
 
       if (isDuplicate) {
         setError(`${weatherData.name} zaten kayıtlı!`);
+        setTimeout(() => {
+          setError(null);
+        }, 2000);
         return;
       }
       
@@ -84,8 +88,17 @@ const DashboardPage: React.FC = () => {
       
       saveCity(newCityData);
       setNewCity('');
+      setSuccess(`${weatherData.name} başarıyla eklendi!`); // YENİ: Başarı mesajı
+      
+      setTimeout(() => {
+        setSuccess(null);
+      }, 2000);
+      
     } catch (error) {
-      setError(`Şehir bulunamadı: ${newCity}`);
+       setError(`Şehir bulunamadı: ${newCity}`);
+       setTimeout(() => {
+        setError(null);
+      }, 2000);
       console.error('Error adding city:', error);
     } finally {
       setLoading(false);
@@ -175,6 +188,17 @@ const DashboardPage: React.FC = () => {
               className="error-message"
             >
               {error}
+            </motion.div>
+          )}
+
+          {/* YENİ: Başarı mesajı */}
+          {success && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="success-message"
+            >
+              {success}
             </motion.div>
           )}
         </div>
