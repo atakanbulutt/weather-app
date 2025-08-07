@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { WeatherService } from '../services/weatherService';
 import { WeatherData, ForecastData } from '../types/weather';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -10,7 +10,8 @@ export const useWeather = () => {
   const [error, setError] = useState<string | null>(null);
   const { language } = useLanguage();
 
-  const fetchWeatherByCity = async (city: string) => {
+  // useCallback ile fonksiyonları memoize et
+  const fetchWeatherByCity = useCallback(async (city: string) => {
     setLoading(true);
     setError(null);
     
@@ -18,7 +19,6 @@ export const useWeather = () => {
       const weatherData = await WeatherService.getCurrentWeather(city, 'metric', language);
       setCurrentWeather(weatherData);
       
-      // Get forecast data
       const forecastData = await WeatherService.getForecast(
         weatherData.coord.lat,
         weatherData.coord.lon,
@@ -31,9 +31,9 @@ export const useWeather = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [language]);
 
-  const fetchWeatherByLocation = async (lat: number, lon: number) => {
+  const fetchWeatherByLocation = useCallback(async (lat: number, lon: number) => {
     setLoading(true);
     setError(null);
     
@@ -48,9 +48,9 @@ export const useWeather = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [language]);
 
-  const getUserLocation = (): Promise<{ lat: number; lon: number }> => {
+  const getUserLocation = useCallback((): Promise<{ lat: number; lon: number }> => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
         reject(new Error('Geolocation desteklenmiyor'));
@@ -69,7 +69,7 @@ export const useWeather = () => {
         }
       );
     });
-  };
+  }, []);
 
   return {
     currentWeather,

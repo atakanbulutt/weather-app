@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { translations } from '../i18n/translations';
 import { useLanguage } from '../contexts/LanguageContext';
 import { motion } from 'framer-motion';
@@ -8,17 +8,23 @@ interface SearchBarProps {
   onLocationSearch: () => void;
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onLocationSearch }) => {
+const SearchBar: React.FC<SearchBarProps> = React.memo(({ onSearch, onLocationSearch }) => {
   const [city, setCity] = useState('');
   const { language } = useLanguage();
   const t = translations[language];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (city.trim()) {
       onSearch(city.trim());
     }
-  };
+  }, [city, onSearch]);
+
+  const handleSearchClick = useCallback(() => {
+    if (city.trim()) {
+      onSearch(city.trim());
+    }
+  }, [city, onSearch]);
 
   return (
     <motion.div
@@ -36,7 +42,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onLocationSearch }) => 
         onKeyPress={(e) => e.key === 'Enter' && handleSubmit(e)}
       />
       <button 
-        onClick={() => city.trim() && onSearch(city.trim())}
+        onClick={handleSearchClick}
         className="search-button"
       >
         {t.app.search}
@@ -50,6 +56,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onLocationSearch }) => 
       </button>
     </motion.div>
   );
-};
+});
+
+SearchBar.displayName = 'SearchBar';
 
 export default SearchBar;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { WeatherData } from '../types/weather';
 import { translations } from '../i18n/translations';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -79,3 +79,4 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ data }) => {
 };
 
 export default WeatherDisplay;
+

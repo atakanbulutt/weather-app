@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { ForecastData } from '../types/weather';
 import { translations } from '../i18n/translations';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -8,28 +8,32 @@ interface ForecastProps {
   data: ForecastData;
 }
 
-const Forecast: React.FC<ForecastProps> = ({ data }) => {
+const Forecast: React.FC<ForecastProps> = React.memo(({ data }) => {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const { language } = useLanguage();
   const t = translations[language];
 
-  const formatDate = (timestamp: number) => {
+  const formatDate = useCallback((timestamp: number) => {
     return new Date(timestamp * 1000).toLocaleDateString(
       language === 'tr' ? 'tr-TR' : 'en-US',
       { weekday: 'short', day: 'numeric', month: 'short' }
     );
-  };
+  }, [language]);
 
-  const getWeatherIcon = (iconCode: string) => {
+  const getWeatherIcon = useCallback((iconCode: string) => {
     return `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
-  };
+  }, []);
 
-  const getDayName = (timestamp: number) => {
+  const getDayName = useCallback((timestamp: number) => {
     return new Date(timestamp * 1000).toLocaleDateString(
       language === 'tr' ? 'tr-TR' : 'en-US',
       { weekday: 'long' }
     );
-  };
+  }, [language]);
+
+  const handleDayClick = useCallback((index: number) => {
+    setSelectedDay(selectedDay === index ? null : index);
+  }, [selectedDay]);
 
   return (
     <motion.div
@@ -47,7 +51,7 @@ const Forecast: React.FC<ForecastProps> = ({ data }) => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className={`forecast-day ${selectedDay === index ? 'selected' : ''}`}
-            onClick={() => setSelectedDay(selectedDay === index ? null : index)}
+            onClick={() => handleDayClick(index)}
           >
             <div className="day-header">
               <span className="day-name">{getDayName(day.dt)}</span>
@@ -121,6 +125,8 @@ const Forecast: React.FC<ForecastProps> = ({ data }) => {
       )}
     </motion.div>
   );
-};
+});
+
+Forecast.displayName = 'Forecast';
 
 export default Forecast;
