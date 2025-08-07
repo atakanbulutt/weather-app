@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '../contexts/LanguageContext';
 import { translations } from '../i18n/translations';
 import { SavedCity } from '../types/weather';
@@ -9,11 +10,11 @@ import { motion } from 'framer-motion';
 const DashboardPage: React.FC = () => {
   const [savedCities, setSavedCities] = useState<SavedCity[]>([]);
   const [newCity, setNewCity] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null); 
   const { language } = useLanguage();
   const t = translations[language];
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const saved = localStorage.getItem('savedCities');
@@ -29,39 +30,24 @@ const DashboardPage: React.FC = () => {
   };
 
   const removeCity = (cityId: number) => {
+    const city = savedCities.find(c => c.id === cityId);
+    if (city) {
+      // Cache'den şehir verilerini temizle
+      queryClient.removeQueries({ queryKey: ['weather', city.name] });
+      queryClient.removeQueries({ queryKey: ['forecast'] });
+    }
+    
     const updated = savedCities.filter(city => city.id !== cityId);
     setSavedCities(updated);
     localStorage.setItem('savedCities', JSON.stringify(updated));
   };
 
-  const updateCityWeather = async (cityId: number) => {
-    const city = savedCities.find(c => c.id === cityId);
-    if (!city) return;
-
-    try {
-      const weatherData = await WeatherService.getCurrentWeather(city.name, 'metric', language === 'tr' ? 'tr' : 'en');
-      const updatedCities = savedCities.map(c => 
-        c.id === cityId 
-          ? { ...c, weatherData, lastUpdated: Date.now() }
-          : c
-      );
-      setSavedCities(updatedCities);
-      localStorage.setItem('savedCities', JSON.stringify(updatedCities));
-    } catch (error) {
-      console.error('Error updating weather for city:', city.name, error);
-    }
-  };
-
-  const handleAddCity = async () => {
-    if (!newCity.trim()) return;
-
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-
-    try {
-      const weatherData = await WeatherService.getCurrentWeather(newCity, 'metric', language === 'tr' ? 'tr' : 'en');
-      
+  // React Query mutation for adding city
+  const addCityMutation = useMutation({
+    mutationFn: async (cityName: string) => {
+      return await WeatherService.getCurrentWeather(cityName, 'metric', language === 'tr' ? 'tr' : 'en');
+    },
+    onSuccess: (weatherData) => {
       const isDuplicate = savedCities.some(city => 
         city.name.toLowerCase() === weatherData.name.toLowerCase() ||
         (city.country && weatherData.sys.country && 
@@ -71,9 +57,7 @@ const DashboardPage: React.FC = () => {
 
       if (isDuplicate) {
         setError(`${weatherData.name} zaten kayıtlı!`);
-        setTimeout(() => {
-          setError(null);
-        }, 2000);
+        setTimeout(() => setError(null), 2000);
         return;
       }
       
@@ -88,28 +72,63 @@ const DashboardPage: React.FC = () => {
       
       saveCity(newCityData);
       setNewCity('');
-      setSuccess(`${weatherData.name} başarıyla eklendi!`); // YENİ: Başarı mesajı
-      
-      setTimeout(() => {
-        setSuccess(null);
-      }, 2000);
-      
-    } catch (error) {
-       setError(`Şehir bulunamadı: ${newCity}`);
-       setTimeout(() => {
-        setError(null);
-      }, 2000);
-      console.error('Error adding city:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      setSuccess(`${weatherData.name} başarıyla eklendi!`);
+      setTimeout(() => setSuccess(null), 2000);
 
-  const refreshAllWeather = async () => {
-    setLoading(true);
-    try {
+      // Cache'e weather data'yı kaydet
+      queryClient.setQueryData(['weather', weatherData.name, language], weatherData);
+      
+      // Forecast için prefetch yap
+      queryClient.prefetchQuery({
+        queryKey: ['forecast', weatherData.coord.lat, weatherData.coord.lon, language],
+        queryFn: () => WeatherService.getForecast(
+          weatherData.coord.lat,
+          weatherData.coord.lon,
+          'metric',
+          language
+        ),
+        staleTime: 10 * 60 * 1000,
+      });
+    },
+    onError: (error: Error) => {
+      setError(`Şehir bulunamadı: ${newCity}`);
+      setTimeout(() => setError(null), 2000);
+    },
+  });
+
+  // React Query mutation for updating city weather
+  const updateCityWeatherMutation = useMutation({
+    mutationFn: async ({ cityName, cityId }: { cityName: string; cityId: number }) => {
+      const weatherData = await WeatherService.getCurrentWeather(cityName, 'metric', language === 'tr' ? 'tr' : 'en');
+      return { weatherData, cityId };
+    },
+    onSuccess: ({ weatherData, cityId }) => {
+      const updatedCities = savedCities.map(c => 
+        c.id === cityId 
+          ? { ...c, weatherData, lastUpdated: Date.now() }
+          : c
+      );
+      setSavedCities(updatedCities);
+      localStorage.setItem('savedCities', JSON.stringify(updatedCities));
+
+      // Cache'i güncelle
+      queryClient.setQueryData(['weather', weatherData.name, language], weatherData);
+      
+      // Forecast cache'ini invalidate et
+      queryClient.invalidateQueries({ 
+        queryKey: ['forecast', weatherData.coord.lat, weatherData.coord.lon, language] 
+      });
+    },
+    onError: (error: Error) => {
+      console.error('Error updating weather for city:', error);
+    },
+  });
+
+  // React Query mutation for refreshing all weather
+  const refreshAllWeatherMutation = useMutation({
+    mutationFn: async (cities: SavedCity[]) => {
       const updatedCities = await Promise.all(
-        savedCities.map(async (city) => {
+        cities.map(async (city) => {
           try {
             const weatherData = await WeatherService.getCurrentWeather(city.name, 'metric', language === 'tr' ? 'tr' : 'en');
             return { ...city, weatherData, lastUpdated: Date.now() };
@@ -119,13 +138,39 @@ const DashboardPage: React.FC = () => {
           }
         })
       );
+      return updatedCities;
+    },
+    onSuccess: (updatedCities) => {
       setSavedCities(updatedCities);
       localStorage.setItem('savedCities', JSON.stringify(updatedCities));
-    } catch (error) {
+
+      // Tüm cache'leri güncelle
+      updatedCities.forEach(city => {
+        if (city.weatherData) {
+          queryClient.setQueryData(['weather', city.name, language], city.weatherData);
+        }
+      });
+    },
+    onError: (error: Error) => {
       console.error('Error refreshing weather:', error);
-    } finally {
-      setLoading(false);
-    }
+    },
+  });
+
+
+  const updateCityWeather = async (cityId: number) => {
+    const city = savedCities.find(c => c.id === cityId);
+    if (!city) return;
+
+    updateCityWeatherMutation.mutate({ cityName: city.name, cityId });
+  };
+
+  const handleAddCity = async () => {
+    if (!newCity.trim()) return;
+    addCityMutation.mutate(newCity);
+  };
+
+  const refreshAllWeather = async () => {
+    refreshAllWeatherMutation.mutate(savedCities);
   };
 
   const formatTemperature = (temp: number) => {
@@ -140,6 +185,11 @@ const DashboardPage: React.FC = () => {
     const descriptions = t.weather.weatherDescriptions as Record<string, string>;
     return descriptions[description] || description;
   };
+
+  // Combined loading state
+  const isLoading = addCityMutation.isPending || 
+                   updateCityWeatherMutation.isPending || 
+                   refreshAllWeatherMutation.isPending;
 
   return (
     <div className="dashboard-page">
@@ -176,9 +226,9 @@ const DashboardPage: React.FC = () => {
             <button 
               onClick={handleAddCity} 
               className="add-button"
-              disabled={loading}
+              disabled={isLoading}
             >
-              {loading ? 'Ekleniyor...' : t.dashboard.addCity}
+              {isLoading ? 'Ekleniyor...' : t.dashboard.addCity}
             </button>
           </div>
           {error && (
@@ -191,7 +241,6 @@ const DashboardPage: React.FC = () => {
             </motion.div>
           )}
 
-          {/* YENİ: Başarı mesajı */}
           {success && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -208,10 +257,11 @@ const DashboardPage: React.FC = () => {
             <button 
               onClick={refreshAllWeather} 
               className="refresh-button"
-              disabled={loading}
+              disabled={isLoading}
             >
-             {loading ? t.dashboard.loading : t.dashboard.refresh}
+             {isLoading ? t.dashboard.loading : t.dashboard.refresh}
             </button>
+        
           </div>
         )}
 
@@ -272,8 +322,9 @@ const DashboardPage: React.FC = () => {
                     <button 
                       onClick={() => updateCityWeather(city.id)}
                       className="update-weather-button"
+                      disabled={updateCityWeatherMutation.isPending}
                     >
-                      {t.weather.updateWeather}
+                      {updateCityWeatherMutation.isPending ? 'Güncelleniyor...' : t.weather.updateWeather}
                     </button>
                   </div>
                 )}

@@ -11,8 +11,16 @@ import SettingsPage from './pages/SettingsPage';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
+      retry: 2,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
       refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+      staleTime: 5 * 60 * 1000, // 5 dakika
+      gcTime: 10 * 60 * 1000, // 10 dakika (eski cacheTime)
+    },
+    mutations: {
+      retry: 1,
+      retryDelay: 1000,
     },
   },
 });
