@@ -12,6 +12,7 @@ const DashboardPage: React.FC = () => {
   const [newCity, setNewCity] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null); 
+  const [refreshProgress, setRefreshProgress] = useState<{ completed: number; total: number }>({ completed: 0, total: 0 });
   const { language } = useLanguage();
   const t = translations[language];
   const queryClient = useQueryClient();
@@ -87,7 +88,7 @@ const DashboardPage: React.FC = () => {
           'metric',
           language
         ),
-        staleTime: 10 * 60 * 1000,
+        staleTime: 15 * 60 * 1000,
       });
     },
     onError: (error: Error) => {
@@ -124,20 +125,49 @@ const DashboardPage: React.FC = () => {
     },
   });
 
-  // React Query mutation for refreshing all weather
+  // Optimized batch refresh with rate limiting
   const refreshAllWeatherMutation = useMutation({
     mutationFn: async (cities: SavedCity[]) => {
-      const updatedCities = await Promise.all(
-        cities.map(async (city) => {
-          try {
-            const weatherData = await WeatherService.getCurrentWeather(city.name, 'metric', language === 'tr' ? 'tr' : 'en');
-            return { ...city, weatherData, lastUpdated: Date.now() };
-          } catch (error) {
-            console.error(`Error updating weather for ${city.name}:`, error);
-            return city;
+      setRefreshProgress({ completed: 0, total: cities.length });
+      
+      // Batch processing with rate limiting (3 requests at a time)
+      const batchSize = 3;
+      const updatedCities: SavedCity[] = [];
+      
+      for (let i = 0; i < cities.length; i += batchSize) {
+        const batch = cities.slice(i, i + batchSize);
+        
+        // Process batch in parallel
+        const batchResults = await Promise.allSettled(
+          batch.map(async (city) => {
+            try {
+              const weatherData = await WeatherService.getCurrentWeather(city.name, 'metric', language === 'tr' ? 'tr' : 'en');
+              return { ...city, weatherData, lastUpdated: Date.now() };
+            } catch (error) {
+              console.error(`Error updating weather for ${city.name}:`, error);
+              return city; // Return original city if update fails
+            }
+          })
+        );
+        
+        // Add successful results to updated cities
+        batchResults.forEach((result, index) => {
+          if (result.status === 'fulfilled') {
+            updatedCities.push(result.value);
+          } else {
+            updatedCities.push(batch[index]); // Keep original if failed
           }
-        })
-      );
+        });
+        
+        // Update progress
+        setRefreshProgress({ completed: Math.min(i + batchSize, cities.length), total: cities.length });
+        
+        // Rate limiting: wait 500ms between batches
+        if (i + batchSize < cities.length) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
+      
       return updatedCities;
     },
     onSuccess: (updatedCities) => {
@@ -150,12 +180,15 @@ const DashboardPage: React.FC = () => {
           queryClient.setQueryData(['weather', city.name, language], city.weatherData);
         }
       });
+      
+      // Progress'i sıfırla
+      setRefreshProgress({ completed: 0, total: 0 });
     },
     onError: (error: Error) => {
       console.error('Error refreshing weather:', error);
+      setRefreshProgress({ completed: 0, total: 0 });
     },
   });
-
 
   const updateCityWeather = async (cityId: number) => {
     const city = savedCities.find(c => c.id === cityId);
@@ -259,9 +292,21 @@ const DashboardPage: React.FC = () => {
               className="refresh-button"
               disabled={isLoading}
             >
-             {isLoading ? t.dashboard.loading : t.dashboard.refresh}
+              {isLoading && refreshProgress.total > 0 
+                ? `Yenileniyor... (${refreshProgress.completed}/${refreshProgress.total})`
+                : t.dashboard.refresh
+              }
             </button>
-        
+            
+            {/* Progress bar */}
+            {refreshProgress.total > 0 && (
+              <div className="progress-bar">
+                <div 
+                  className="progress-fill"
+                  style={{ width: `${(refreshProgress.completed / refreshProgress.total) * 100}%` }}
+                />
+              </div>
+            )}
           </div>
         )}
 
