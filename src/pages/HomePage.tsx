@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useWeather } from '../hooks/useWeather';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -21,21 +21,27 @@ const HomePage: React.FC = () => {
   
   const { language } = useLanguage();
   const t = translations[language];
+  const hasInitialized = useRef(false);
 
   useEffect(() => {
     const getInitialLocation = async () => {
+      // Sadece bir kez çalışsın
+      if (hasInitialized.current || currentWeather) {
+        return;
+      }
+
       try {
-        if (!currentWeather) {
-          const coords = await getUserLocation();
-          await fetchWeatherByLocation(coords.lat, coords.lon);
-        }
+        hasInitialized.current = true;
+        const coords = await getUserLocation();
+        await fetchWeatherByLocation(coords.lat, coords.lon);
       } catch (err) {
         console.error('Initial location error:', err);
+        hasInitialized.current = false; // Hata durumunda tekrar deneyebilsin
       }
     };
 
     getInitialLocation();
-  }, [currentWeather, fetchWeatherByLocation, getUserLocation]);
+  }, []);
 
   const handleSearch = async (city: string) => {
     await fetchWeatherByCity(city);

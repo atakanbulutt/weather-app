@@ -11,19 +11,20 @@ export const useWeather = () => {
   const { language } = useLanguage();
   const queryClient = useQueryClient();
 
-  // React Query ile weather data fetching
+  // React Query ile weather data fetching - sadece currentWeather varsa çalışsın
   const weatherQuery = useQuery({
     queryKey: ['weather', currentWeather?.name, language],
     queryFn: async () => {
       if (!currentWeather?.name) return null;
       return await WeatherService.getCurrentWeather(currentWeather.name, 'metric', language);
     },
-    enabled: !!currentWeather?.name,
+    enabled: !!currentWeather?.name, // Sadece currentWeather varsa çalışsın
     staleTime: 5 * 60 * 1000, // 5 dakika
     retry: 2,
+    refetchOnWindowFocus: false, // Window focus'ta refetch yapmasın
   });
 
-  // React Query ile forecast data fetching
+  // React Query ile forecast data fetching - sadece coordinates varsa çalışsın
   const forecastQuery = useQuery({
     queryKey: ['forecast', currentWeather?.coord?.lat, currentWeather?.coord?.lon, language],
     queryFn: async () => {
@@ -35,9 +36,10 @@ export const useWeather = () => {
         language
       );
     },
-    enabled: !!currentWeather?.coord,
+    enabled: !!currentWeather?.coord, // Sadece coordinates varsa çalışsın
     staleTime: 10 * 60 * 1000, // 10 dakika
     retry: 2,
+    refetchOnWindowFocus: false, // Window focus'ta refetch yapmasın
   });
 
   // Mutation for fetching weather by city

@@ -11,12 +11,13 @@ import SettingsPage from './pages/SettingsPage';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 2,
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: true,
-      staleTime: 5 * 60 * 1000, // 5 dakika
-      gcTime: 10 * 60 * 1000, // 10 dakika (eski cacheTime)
+      retry: 1, // Retry sayısını azalttık
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Max delay'i azalttık
+      refetchOnWindowFocus: false, // Window focus'ta refetch yapmasın
+      refetchOnReconnect: false, // Reconnect'te refetch yapmasın
+      refetchOnMount: false, // Mount'ta refetch yapmasın
+      staleTime: 10 * 60 * 1000, // 10 dakika (daha uzun)
+      gcTime: 15 * 60 * 1000, // 15 dakika (daha uzun)
     },
     mutations: {
       retry: 1,
