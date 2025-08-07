@@ -34,7 +34,6 @@ const HomePage: React.FC = () => {
       const savedWeather = localStorage.getItem('currentWeather');
       if (savedWeather) {
         try {
-          const weatherData = JSON.parse(savedWeather);
           // Eğer localStorage'da veri varsa, sadece forecast için istek at
           console.log('Using cached weather data from localStorage');
           return;
@@ -55,7 +54,7 @@ const HomePage: React.FC = () => {
     };
 
     getInitialLocation();
-  }, []); // Boş dependency array
+  }, [currentWeather, fetchWeatherByLocation, getUserLocation]); // ESLint için dependencies eklendi
 
   const handleSearch = async (city: string) => {
     await fetchWeatherByCity(city);

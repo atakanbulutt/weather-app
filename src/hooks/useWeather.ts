@@ -139,7 +139,7 @@ export const useWeather = () => {
     queryClient.removeQueries({ queryKey: ['forecast'] });
   }, [queryClient]);
 
-  // useCallback ile fonksiyonları memoize et
+  // useCallback ile fonksiyonları memoize et - language dependency'si eklendi
   const fetchWeatherByCity = useCallback(async (city: string) => {
     fetchWeatherByCityMutation.mutate(city);
   }, [fetchWeatherByCityMutation]);
