@@ -27,18 +27,20 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onLocationSearch }) => 
       transition={{ duration: 0.5 }}
       className="search-container"
     >
-      <form onSubmit={handleSubmit} className="search-bar">
-        <input
-          type="text"
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-          placeholder={t.app.searchPlaceholder}
-          className="search-input"
-        />
-        <button type="submit" className="search-button">
-          {t.app.search}
-        </button>
-      </form>
+      <input
+        type="text"
+        value={city}
+        onChange={(e) => setCity(e.target.value)}
+        placeholder={t.app.searchPlaceholder}
+        className="search-input"
+        onKeyPress={(e) => e.key === 'Enter' && handleSubmit(e)}
+      />
+      <button 
+        onClick={() => city.trim() && onSearch(city.trim())}
+        className="search-button"
+      >
+        {t.app.search}
+      </button>
       <button 
         onClick={onLocationSearch} 
         className="location-button"
