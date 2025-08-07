@@ -25,13 +25,27 @@ const HomePage: React.FC = () => {
 
   useEffect(() => {
     const getInitialLocation = async () => {
-      // Sadece bir kez çalışsın
+      // Sadece bir kez çalışsın ve localStorage'da veri yoksa
       if (hasInitialized.current || currentWeather) {
         return;
       }
 
+      // LocalStorage'da kayıtlı weather data var mı kontrol et
+      const savedWeather = localStorage.getItem('currentWeather');
+      if (savedWeather) {
+        try {
+          const weatherData = JSON.parse(savedWeather);
+          // Eğer localStorage'da veri varsa, sadece forecast için istek at
+          console.log('Using cached weather data from localStorage');
+          return;
+        } catch (error) {
+          console.error('Error parsing saved weather:', error);
+        }
+      }
+
       try {
         hasInitialized.current = true;
+        console.log('Fetching initial location weather...');
         const coords = await getUserLocation();
         await fetchWeatherByLocation(coords.lat, coords.lon);
       } catch (err) {
@@ -41,7 +55,7 @@ const HomePage: React.FC = () => {
     };
 
     getInitialLocation();
-  }, []);
+  }, []); // Boş dependency array
 
   const handleSearch = async (city: string) => {
     await fetchWeatherByCity(city);

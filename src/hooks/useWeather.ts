@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { WeatherService } from '../services/weatherService';
 import { WeatherData, ForecastData } from '../types/weather';
@@ -11,22 +11,43 @@ export const useWeather = () => {
   const { language } = useLanguage();
   const queryClient = useQueryClient();
 
-  // React Query ile weather data fetching - sadece currentWeather varsa çalışsın
+  // LocalStorage'dan weather data'yı yükle
+  useEffect(() => {
+    const savedWeather = localStorage.getItem('currentWeather');
+    if (savedWeather) {
+      try {
+        const weatherData = JSON.parse(savedWeather);
+        setCurrentWeather(weatherData);
+      } catch (error) {
+        console.error('Error loading saved weather:', error);
+      }
+    }
+  }, []);
+
+  // Weather data değiştiğinde localStorage'a kaydet
+  useEffect(() => {
+    if (currentWeather) {
+      localStorage.setItem('currentWeather', JSON.stringify(currentWeather));
+    }
+  }, [currentWeather]);
+
+  // React Query ile weather data fetching - daha stabil query key
   const weatherQuery = useQuery({
-    queryKey: ['weather', currentWeather?.name, language],
+    queryKey: ['weather', currentWeather?.name || 'current', language],
     queryFn: async () => {
       if (!currentWeather?.name) return null;
       return await WeatherService.getCurrentWeather(currentWeather.name, 'metric', language);
     },
-    enabled: !!currentWeather?.name, // Sadece currentWeather varsa çalışsın
-    staleTime: 5 * 60 * 1000, // 5 dakika
-    retry: 2,
-    refetchOnWindowFocus: false, // Window focus'ta refetch yapmasın
+    enabled: !!currentWeather?.name,
+    staleTime: 10 * 60 * 1000, // 10 dakika
+    retry: 1,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Mount'ta refetch yapmasın
   });
 
-  // React Query ile forecast data fetching - sadece coordinates varsa çalışsın
+  // React Query ile forecast data fetching - daha stabil query key
   const forecastQuery = useQuery({
-    queryKey: ['forecast', currentWeather?.coord?.lat, currentWeather?.coord?.lon, language],
+    queryKey: ['forecast', currentWeather?.coord?.lat || 0, currentWeather?.coord?.lon || 0, language],
     queryFn: async () => {
       if (!currentWeather?.coord) return null;
       return await WeatherService.getForecast(
@@ -36,10 +57,11 @@ export const useWeather = () => {
         language
       );
     },
-    enabled: !!currentWeather?.coord, // Sadece coordinates varsa çalışsın
-    staleTime: 10 * 60 * 1000, // 10 dakika
-    retry: 2,
-    refetchOnWindowFocus: false, // Window focus'ta refetch yapmasın
+    enabled: !!currentWeather?.coord,
+    staleTime: 15 * 60 * 1000, // 15 dakika
+    retry: 1,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Mount'ta refetch yapmasın
   });
 
   // Mutation for fetching weather by city
@@ -64,7 +86,7 @@ export const useWeather = () => {
           'metric',
           language
         ),
-        staleTime: 10 * 60 * 1000,
+        staleTime: 15 * 60 * 1000,
       });
     },
     onError: (err: Error) => {
@@ -94,7 +116,7 @@ export const useWeather = () => {
           'metric',
           language
         ),
-        staleTime: 10 * 60 * 1000,
+        staleTime: 15 * 60 * 1000,
       });
     },
     onError: (err: Error) => {
@@ -108,6 +130,7 @@ export const useWeather = () => {
     setCurrentWeather(null);
     setForecast(null);
     setError(null);
+    localStorage.removeItem('currentWeather');
   }, [queryClient]);
 
   // Belirli bir şehrin cache'ini temizleme

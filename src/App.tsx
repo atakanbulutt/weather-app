@@ -12,12 +12,13 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1, // Retry sayısını azalttık
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Max delay'i azalttık
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000), // Max delay'i azalttık
       refetchOnWindowFocus: false, // Window focus'ta refetch yapmasın
       refetchOnReconnect: false, // Reconnect'te refetch yapmasın
       refetchOnMount: false, // Mount'ta refetch yapmasın
-      staleTime: 10 * 60 * 1000, // 10 dakika (daha uzun)
-      gcTime: 15 * 60 * 1000, // 15 dakika (daha uzun)
+      staleTime: 15 * 60 * 1000, // 15 dakika (daha uzun)
+      gcTime: 30 * 60 * 1000, // 30 dakika (daha uzun)
+      refetchInterval: false, // Otomatik refetch yapmasın
     },
     mutations: {
       retry: 1,
