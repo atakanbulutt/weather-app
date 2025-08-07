@@ -60,6 +60,19 @@ const DashboardPage: React.FC = () => {
     try {
       const weatherData = await WeatherService.getCurrentWeather(newCity, 'metric', language === 'tr' ? 'tr' : 'en');
       
+      // Duplicate şehir kontrolü - BU SATIRI EKLİYORUM
+      const isDuplicate = savedCities.some(city => 
+        city.name.toLowerCase() === weatherData.name.toLowerCase() ||
+        (city.country && weatherData.sys.country && 
+         city.name.toLowerCase() === weatherData.name.toLowerCase() && 
+         city.country.toLowerCase() === weatherData.sys.country.toLowerCase())
+      );
+
+      if (isDuplicate) {
+        setError(`${weatherData.name} zaten kayıtlı!`);
+        return;
+      }
+      
       const newCityData: SavedCity = {
         id: Date.now(),
         name: weatherData.name,
