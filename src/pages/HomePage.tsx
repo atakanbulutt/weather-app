@@ -22,6 +22,24 @@ const HomePage: React.FC = () => {
   const { language } = useLanguage();
   const t = translations[language];
 
+  // Sayfa yüklendiğinde otomatik olarak konum al
+  useEffect(() => {
+    const getInitialLocation = async () => {
+      try {
+        // Eğer zaten hava durumu verisi varsa, tekrar almaya gerek yok
+        if (!currentWeather) {
+          const coords = await getUserLocation();
+          await fetchWeatherByLocation(coords.lat, coords.lon);
+        }
+      } catch (err) {
+        console.error('Initial location error:', err);
+        // Konum alınamazsa sessizce devam et
+      }
+    };
+
+    getInitialLocation();
+  }, []); // Sadece component mount olduğunda çalışsın
+
   const handleSearch = async (city: string) => {
     await fetchWeatherByCity(city);
   };
