@@ -11,7 +11,7 @@ export const translations = {
     },
     weather: {
       current: 'Mevcut Hava Durumu',
-      forecast: '7 Günlük Tahmin',
+      forecast: '5 Günlük Tahmin',
       temperature: 'Sıcaklık',
       feelsLike: 'Hissedilen',
       humidity: 'Nem',

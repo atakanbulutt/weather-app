@@ -35,6 +35,13 @@ const Forecast: React.FC<ForecastProps> = React.memo(({ data }) => {
     setSelectedDay(selectedDay === index ? null : index);
   }, [selectedDay]);
 
+  // 5 günlük forecast'ı günlük gruplara ayır
+  const dailyForecasts = data.list.filter((item, index) => {
+    // Her günün 12:00 saatindeki veriyi al (günlük özet için)
+    const date = new Date(item.dt * 1000);
+    return date.getHours() === 12;
+  });
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -45,7 +52,7 @@ const Forecast: React.FC<ForecastProps> = React.memo(({ data }) => {
       <h3>{t.weather.forecast}</h3>
       
       <div className="forecast-list">
-        {data.daily.slice(0, 7).map((day, index) => (
+        {dailyForecasts.slice(0, 5).map((day, index) => (
           <motion.div
             key={day.dt}
             whileHover={{ scale: 1.05 }}
@@ -65,8 +72,8 @@ const Forecast: React.FC<ForecastProps> = React.memo(({ data }) => {
                 className="weather-icon"
               />
               <div className="day-temp">
-                <span className="temp-max">{Math.round(day.temp.max)}°</span>
-                <span className="temp-min">{Math.round(day.temp.min)}°</span>
+                <span className="temp-max">{Math.round(day.main.temp_max)}°</span>
+                <span className="temp-min">{Math.round(day.main.temp_min)}°</span>
               </div>
             </div>
             
@@ -82,42 +89,42 @@ const Forecast: React.FC<ForecastProps> = React.memo(({ data }) => {
           exit={{ opacity: 0, height: 0 }}
           className="forecast-details"
         >
-          <h4>{getDayName(data.daily[selectedDay].dt)}</h4>
+          <h4>{getDayName(dailyForecasts[selectedDay].dt)}</h4>
           <div className="details-grid">
             <div className="detail-item">
               <span className="detail-label">{t.weather.temperature}</span>
               <span className="detail-value">
-                {Math.round(data.daily[selectedDay].temp.day)}°C
+                {Math.round(dailyForecasts[selectedDay].main.temp)}°C
               </span>
             </div>
             <div className="detail-item">
               <span className="detail-label">{t.weather.feelsLike}</span>
               <span className="detail-value">
-                {Math.round(data.daily[selectedDay].feels_like.day)}°C
+                {Math.round(dailyForecasts[selectedDay].main.feels_like)}°C
               </span>
             </div>
             <div className="detail-item">
               <span className="detail-label">{t.weather.humidity}</span>
               <span className="detail-value">
-                {data.daily[selectedDay].humidity}%
+                {dailyForecasts[selectedDay].main.humidity}%
               </span>
             </div>
             <div className="detail-item">
               <span className="detail-label">{t.weather.windSpeed}</span>
               <span className="detail-value">
-                {data.daily[selectedDay].wind_speed} m/s
+                {dailyForecasts[selectedDay].wind.speed} m/s
               </span>
             </div>
             <div className="detail-item">
               <span className="detail-label">{t.weather.pressure}</span>
               <span className="detail-value">
-                {data.daily[selectedDay].pressure} hPa
+                {dailyForecasts[selectedDay].main.pressure} hPa
               </span>
             </div>
             <div className="detail-item">
-              <span className="detail-label">UV Index</span>
+              <span className="detail-label">Yağış Olasılığı</span>
               <span className="detail-value">
-                {data.daily[selectedDay].uvi}
+                {Math.round(dailyForecasts[selectedDay].pop * 100)}%
               </span>
             </div>
           </div>

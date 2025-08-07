@@ -39,7 +39,8 @@ export class WeatherService {
     units: string = UNITS.METRIC,
     lang: string = LANGUAGES.TR
   ): Promise<ForecastData> {
-    const url = `${ENDPOINTS.FORECAST}?lat=${lat}&lon=${lon}&exclude=hourly,minutely&appid=${API_KEY}&units=${units}&lang=${lang}`;
+    // Ücretsiz 5 günlük forecast API kullanıyoruz
+    const url = `${ENDPOINTS.FORECAST}?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=${units}&lang=${lang}`;
     return this.makeRequest(url);
   }
 }
