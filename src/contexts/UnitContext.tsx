@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useCallback,
+  useMemo,
+} from 'react';
 
 type Unit = 'metric' | 'imperial';
 
@@ -38,23 +46,22 @@ export const UnitProvider: React.FC<UnitProviderProps> = ({ children }) => {
   }, []);
 
   const toggleUnit = useCallback(() => {
-    setUnitState(prev => prev === 'metric' ? 'imperial' : 'metric');
+    setUnitState(prev => (prev === 'metric' ? 'imperial' : 'metric'));
   }, []);
 
   const getUnitSymbol = useCallback(() => {
     return unit === 'metric' ? '°C' : '°F';
   }, [unit]);
 
-  const value = useMemo(() => ({
-    unit,
-    setUnit,
-    toggleUnit,
-    getUnitSymbol,
-  }), [unit, setUnit, toggleUnit, getUnitSymbol]);
-
-  return (
-    <UnitContext.Provider value={value}>
-      {children}
-    </UnitContext.Provider>
+  const value = useMemo(
+    () => ({
+      unit,
+      setUnit,
+      toggleUnit,
+      getUnitSymbol,
+    }),
+    [unit, setUnit, toggleUnit, getUnitSymbol]
   );
+
+  return <UnitContext.Provider value={value}>{children}</UnitContext.Provider>;
 };

@@ -19,7 +19,7 @@ const Settings: React.FC = () => {
       className="settings-container"
     >
       <h3>{t.settings.title}</h3>
-      
+
       <div className="settings-section">
         <h4>{t.settings.theme}</h4>
         <div className="setting-item">

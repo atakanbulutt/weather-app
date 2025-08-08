@@ -9,33 +9,43 @@ interface ForecastProps {
   data: ForecastData;
 }
 
+
 const Forecast: React.FC<ForecastProps> = React.memo(({ data }) => {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const { language } = useLanguage();
   const { getUnitSymbol } = useUnit();
   const t = translations[language];
 
-  const formatDate = useCallback((timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleDateString(
-      language === 'tr' ? 'tr-TR' : 'en-US',
-      { weekday: 'short', day: 'numeric', month: 'short' }
-    );
-  }, [language]);
+  const formatDate = useCallback(
+    (timestamp: number) => {
+      return new Date(timestamp * 1000).toLocaleDateString(
+        language === 'tr' ? 'tr-TR' : 'en-US',
+        { weekday: 'short', day: 'numeric', month: 'short' }
+      );
+    },
+    [language]
+  );
 
   const getWeatherIcon = useCallback((iconCode: string) => {
     return `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
   }, []);
 
-  const getDayName = useCallback((timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleDateString(
-      language === 'tr' ? 'tr-TR' : 'en-US',
-      { weekday: 'long' }
-    );
-  }, [language]);
+  const getDayName = useCallback(
+    (timestamp: number) => {
+      return new Date(timestamp * 1000).toLocaleDateString(
+        language === 'tr' ? 'tr-TR' : 'en-US',
+        { weekday: 'long' }
+      );
+    },
+    [language]
+  );
 
-  const handleDayClick = useCallback((index: number) => {
-    setSelectedDay(selectedDay === index ? null : index);
-  }, [selectedDay]);
+  const handleDayClick = useCallback(
+    (index: number) => {
+      setSelectedDay(selectedDay === index ? null : index);
+    },
+    [selectedDay]
+  );
 
   // 5 günlük forecast'ı günlük gruplara ayır
   const dailyForecasts = data.list.filter((item, index) => {
@@ -52,7 +62,7 @@ const Forecast: React.FC<ForecastProps> = React.memo(({ data }) => {
       className="forecast-container"
     >
       <h3>{t.weather.forecast}</h3>
-      
+
       <div className="forecast-list">
         {dailyForecasts.slice(0, 5).map((day, index) => (
           <motion.div
@@ -66,19 +76,25 @@ const Forecast: React.FC<ForecastProps> = React.memo(({ data }) => {
               <span className="day-name">{getDayName(day.dt)}</span>
               <span className="day-date">{formatDate(day.dt)}</span>
             </div>
-            
+
             <div className="day-weather">
-              <img 
-                src={getWeatherIcon(day.weather[0].icon)} 
+              <img
+                src={getWeatherIcon(day.weather[0].icon)}
                 alt={day.weather[0].description}
                 className="weather-icon"
               />
               <div className="day-temp">
-                <span className="temp-max">{Math.round(day.main.temp_max)}{getUnitSymbol()}</span>
-                <span className="temp-min">{Math.round(day.main.temp_min)}{getUnitSymbol()}</span>
+                <span className="temp-max">
+                  {Math.round(day.main.temp_max)}
+                  {getUnitSymbol()}
+                </span>
+                <span className="temp-min">
+                  {Math.round(day.main.temp_min)}
+                  {getUnitSymbol()}
+                </span>
               </div>
             </div>
-            
+
             <p className="day-description">{day.weather[0].description}</p>
           </motion.div>
         ))}
@@ -96,13 +112,15 @@ const Forecast: React.FC<ForecastProps> = React.memo(({ data }) => {
             <div className="detail-item">
               <span className="detail-label">{t.weather.temperature}</span>
               <span className="detail-value">
-                {Math.round(dailyForecasts[selectedDay].main.temp)}{getUnitSymbol()}
+                {Math.round(dailyForecasts[selectedDay].main.temp)}
+                {getUnitSymbol()}
               </span>
             </div>
             <div className="detail-item">
               <span className="detail-label">{t.weather.feelsLike}</span>
               <span className="detail-value">
-                {Math.round(dailyForecasts[selectedDay].main.feels_like)}{getUnitSymbol()}
+                {Math.round(dailyForecasts[selectedDay].main.feels_like)}
+                {getUnitSymbol()}
               </span>
             </div>
             <div className="detail-item">

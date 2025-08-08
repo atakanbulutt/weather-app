@@ -338,7 +338,7 @@
   background-color: var(--background-color);
 }
 
-.setting-label input[type="radio"] {
+.setting-label input[type='radio'] {
   margin: 0;
 }
 

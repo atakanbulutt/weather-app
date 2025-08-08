@@ -6,10 +6,14 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useUnit } from '../contexts/UnitContext';
 
 export const useWeather = () => {
-  const [currentWeather, setCurrentWeather] = useState<WeatherData | null>(null);
+  const [currentWeather, setCurrentWeather] = useState<WeatherData | null>(
+    null
+  );
   const [forecast, setForecast] = useState<ForecastData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt' | 'unknown'>('unknown');
+  const [locationPermission, setLocationPermission] = useState<
+    'granted' | 'denied' | 'prompt' | 'unknown'
+  >('unknown');
   const { language } = useLanguage();
   const { unit } = useUnit();
   const queryClient = useQueryClient();
@@ -37,9 +41,9 @@ export const useWeather = () => {
   // Geolocation izin durumunu kontrol et
   useEffect(() => {
     if ('permissions' in navigator) {
-      navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+      navigator.permissions.query({ name: 'geolocation' }).then(result => {
         setLocationPermission(result.state);
-        
+
         result.addEventListener('change', () => {
           setLocationPermission(result.state);
         });
@@ -52,7 +56,11 @@ export const useWeather = () => {
     queryKey: ['weather', currentWeather?.name || 'current', language, unit],
     queryFn: async () => {
       if (!currentWeather?.name) return null;
-      return await WeatherService.getCurrentWeather(currentWeather.name, unit, language);
+      return await WeatherService.getCurrentWeather(
+        currentWeather.name,
+        unit,
+        language
+      );
     },
     enabled: !!currentWeather?.name,
     staleTime: 10 * 60 * 1000, // 10 dakika
@@ -63,7 +71,13 @@ export const useWeather = () => {
 
   // React Query ile forecast data fetching - daha stabil query key
   const forecastQuery = useQuery({
-    queryKey: ['forecast', currentWeather?.coord?.lat || 0, currentWeather?.coord?.lon || 0, language, unit],
+    queryKey: [
+      'forecast',
+      currentWeather?.coord?.lat || 0,
+      currentWeather?.coord?.lon || 0,
+      language,
+      unit,
+    ],
     queryFn: async () => {
       if (!currentWeather?.coord) return null;
       return await WeatherService.getForecast(
@@ -83,25 +97,39 @@ export const useWeather = () => {
   // Mutation for fetching weather by city
   const fetchWeatherByCityMutation = useMutation({
     mutationFn: async (city: string) => {
-      const weatherData = await WeatherService.getCurrentWeather(city, unit, language);
+      const weatherData = await WeatherService.getCurrentWeather(
+        city,
+        unit,
+        language
+      );
       return weatherData;
     },
-    onSuccess: (weatherData) => {
+    onSuccess: weatherData => {
       setCurrentWeather(weatherData);
       setError(null);
-      
+
       // Cache'e weather data'yı kaydet
-      queryClient.setQueryData(['weather', weatherData.name, language, unit], weatherData);
-      
+      queryClient.setQueryData(
+        ['weather', weatherData.name, language, unit],
+        weatherData
+      );
+
       // Forecast için prefetch yap
       queryClient.prefetchQuery({
-        queryKey: ['forecast', weatherData.coord.lat, weatherData.coord.lon, language, unit],
-        queryFn: () => WeatherService.getForecast(
+        queryKey: [
+          'forecast',
           weatherData.coord.lat,
           weatherData.coord.lon,
+          language,
           unit,
-          language
-        ),
+        ],
+        queryFn: () =>
+          WeatherService.getForecast(
+            weatherData.coord.lat,
+            weatherData.coord.lon,
+            unit,
+            language
+          ),
         staleTime: 15 * 60 * 1000,
       });
     },
@@ -113,25 +141,40 @@ export const useWeather = () => {
   // Mutation for fetching weather by location
   const fetchWeatherByLocationMutation = useMutation({
     mutationFn: async ({ lat, lon }: { lat: number; lon: number }) => {
-      const weatherData = await WeatherService.getWeatherByCoords(lat, lon, unit, language);
+      const weatherData = await WeatherService.getWeatherByCoords(
+        lat,
+        lon,
+        unit,
+        language
+      );
       return weatherData;
     },
-    onSuccess: (weatherData) => {
+    onSuccess: weatherData => {
       setCurrentWeather(weatherData);
       setError(null);
-      
+
       // Cache'e weather data'yı kaydet
-      queryClient.setQueryData(['weather', weatherData.name, language, unit], weatherData);
-      
+      queryClient.setQueryData(
+        ['weather', weatherData.name, language, unit],
+        weatherData
+      );
+
       // Forecast için prefetch yap
       queryClient.prefetchQuery({
-        queryKey: ['forecast', weatherData.coord.lat, weatherData.coord.lon, language, unit],
-        queryFn: () => WeatherService.getForecast(
+        queryKey: [
+          'forecast',
           weatherData.coord.lat,
           weatherData.coord.lon,
+          language,
           unit,
-          language
-        ),
+        ],
+        queryFn: () =>
+          WeatherService.getForecast(
+            weatherData.coord.lat,
+            weatherData.coord.lon,
+            unit,
+            language
+          ),
         staleTime: 15 * 60 * 1000,
       });
     },
@@ -150,24 +193,40 @@ export const useWeather = () => {
   }, [queryClient]);
 
   // Belirli bir şehrin cache'ini temizleme
-  const clearCityCache = useCallback((cityName: string) => {
-    queryClient.removeQueries({ queryKey: ['weather', cityName] });
-    queryClient.removeQueries({ queryKey: ['forecast'] });
-  }, [queryClient]);
+  const clearCityCache = useCallback(
+    (cityName: string) => {
+      queryClient.removeQueries({ queryKey: ['weather', cityName] });
+      queryClient.removeQueries({ queryKey: ['forecast'] });
+    },
+    [queryClient]
+  );
 
   // useCallback ile fonksiyonları memoize et - language dependency'si eklendi
-  const fetchWeatherByCity = useCallback(async (city: string) => {
-    fetchWeatherByCityMutation.mutate(city);
-  }, [fetchWeatherByCityMutation]);
+  const fetchWeatherByCity = useCallback(
+    async (city: string) => {
+      fetchWeatherByCityMutation.mutate(city);
+    },
+    [fetchWeatherByCityMutation]
+  );
 
-  const fetchWeatherByLocation = useCallback(async (lat: number, lon: number) => {
-    fetchWeatherByLocationMutation.mutate({ lat, lon });
-  }, [fetchWeatherByLocationMutation]);
+  const fetchWeatherByLocation = useCallback(
+    async (lat: number, lon: number) => {
+      fetchWeatherByLocationMutation.mutate({ lat, lon });
+    },
+    [fetchWeatherByLocationMutation]
+  );
 
-  const getUserLocation = useCallback((): Promise<{ lat: number; lon: number }> => {
+  const getUserLocation = useCallback((): Promise<{
+    lat: number;
+    lon: number;
+  }> => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
-        reject(new Error('Bu tarayıcı konum servisini desteklemiyor. Lütfen şehir adı ile arama yapın.'));
+        reject(
+          new Error(
+            'Bu tarayıcı konum servisini desteklemiyor. Lütfen şehir adı ile arama yapın.'
+          )
+        );
         return;
       }
 
@@ -175,33 +234,37 @@ export const useWeather = () => {
       const options = {
         enableHighAccuracy: true,
         timeout: 10000, // 10 saniye
-        maximumAge: 300000 // 5 dakika cache
+        maximumAge: 300000, // 5 dakika cache
       };
 
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        position => {
           resolve({
             lat: position.coords.latitude,
             lon: position.coords.longitude,
           });
         },
-        (error) => {
+        error => {
           let errorMessage = 'Konum alınamadı';
-          
+
           switch (error.code) {
             case error.PERMISSION_DENIED:
-              errorMessage = 'Konum izni reddedildi. Lütfen tarayıcı ayarlarından konum iznini etkinleştirin veya şehir adı ile arama yapın.';
+              errorMessage =
+                'Konum izni reddedildi. Lütfen tarayıcı ayarlarından konum iznini etkinleştirin veya şehir adı ile arama yapın.';
               break;
             case error.POSITION_UNAVAILABLE:
-              errorMessage = 'Konum bilgisi mevcut değil. Lütfen şehir adı ile arama yapın.';
+              errorMessage =
+                'Konum bilgisi mevcut değil. Lütfen şehir adı ile arama yapın.';
               break;
             case error.TIMEOUT:
-              errorMessage = 'Konum alımı zaman aşımına uğradı. Lütfen tekrar deneyin veya şehir adı ile arama yapın.';
+              errorMessage =
+                'Konum alımı zaman aşımına uğradı. Lütfen tekrar deneyin veya şehir adı ile arama yapın.';
               break;
             default:
-              errorMessage = 'Konum alınamadı. Lütfen şehir adı ile arama yapın.';
+              errorMessage =
+                'Konum alınamadı. Lütfen şehir adı ile arama yapın.';
           }
-          
+
           reject(new Error(errorMessage));
         },
         options
@@ -210,17 +273,19 @@ export const useWeather = () => {
   }, []);
 
   // Combined loading state
-  const isLoading = fetchWeatherByCityMutation.isPending || 
-                   fetchWeatherByLocationMutation.isPending || 
-                   weatherQuery.isLoading || 
-                   forecastQuery.isLoading;
+  const isLoading =
+    fetchWeatherByCityMutation.isPending ||
+    fetchWeatherByLocationMutation.isPending ||
+    weatherQuery.isLoading ||
+    forecastQuery.isLoading;
 
   // Combined error state
-  const combinedError = error || 
-                       weatherQuery.error?.message || 
-                       forecastQuery.error?.message ||
-                       fetchWeatherByCityMutation.error?.message ||
-                       fetchWeatherByLocationMutation.error?.message;
+  const combinedError =
+    error ||
+    weatherQuery.error?.message ||
+    forecastQuery.error?.message ||
+    fetchWeatherByCityMutation.error?.message ||
+    fetchWeatherByLocationMutation.error?.message;
 
   return {
     currentWeather: weatherQuery.data || currentWeather,

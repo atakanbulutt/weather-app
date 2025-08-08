@@ -13,7 +13,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1, // Retry sayısını azalttık
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000), // Max delay'i azalttık
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 5000), // Max delay'i azalttık
       refetchOnWindowFocus: false, // Window focus'ta refetch yapmasın
       refetchOnReconnect: false, // Reconnect'te refetch yapmasın
       refetchOnMount: false, // Mount'ta refetch yapmasın

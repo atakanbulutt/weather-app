@@ -9,17 +9,17 @@ import Forecast from '../components/Forecast';
 import { motion } from 'framer-motion';
 
 const HomePage: React.FC = () => {
-  const { 
-    currentWeather, 
-    forecast, 
-    loading, 
-    error, 
+  const {
+    currentWeather,
+    forecast,
+    loading,
+    error,
     locationPermission,
-    fetchWeatherByCity, 
-    fetchWeatherByLocation, 
-    getUserLocation 
+    fetchWeatherByCity,
+    fetchWeatherByLocation,
+    getUserLocation,
   } = useWeather();
-  
+
   const { language } = useLanguage();
   const t = translations[language];
   const hasInitialized = useRef(false);
@@ -45,7 +45,9 @@ const HomePage: React.FC = () => {
 
       // Mobil cihazlarda konum izni kontrolü
       if (locationPermission === 'denied') {
-        console.log('Location permission denied, skipping automatic location fetch');
+        console.log(
+          'Location permission denied, skipping automatic location fetch'
+        );
         return;
       }
 
@@ -61,7 +63,12 @@ const HomePage: React.FC = () => {
     };
 
     getInitialLocation();
-  }, [currentWeather, fetchWeatherByLocation, getUserLocation, locationPermission]); // ESLint için dependencies eklendi
+  }, [
+    currentWeather,
+    fetchWeatherByLocation,
+    getUserLocation,
+    locationPermission,
+  ]); // ESLint için dependencies eklendi
 
   const handleSearch = async (city: string) => {
     await fetchWeatherByCity(city);
@@ -85,7 +92,10 @@ const HomePage: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           className="location-permission-message"
         >
-          <p>📍 Konum izni reddedildi. Hava durumu bilgisi için şehir adı ile arama yapabilirsiniz.</p>
+          <p>
+            📍 Konum izni reddedildi. Hava durumu bilgisi için şehir adı ile
+            arama yapabilirsiniz.
+          </p>
         </motion.div>
       );
     }
@@ -113,10 +123,13 @@ const HomePage: React.FC = () => {
       </header>
 
       <main className="main-content">
-        <SearchBar onSearch={handleSearch} onLocationSearch={handleLocationSearch} />
-        
+        <SearchBar
+          onSearch={handleSearch}
+          onLocationSearch={handleLocationSearch}
+        />
+
         {renderLocationPermissionMessage()}
-        
+
         {loading && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -126,7 +139,7 @@ const HomePage: React.FC = () => {
             {t.app.loading}
           </motion.div>
         )}
-        
+
         {error && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -136,14 +149,10 @@ const HomePage: React.FC = () => {
             {error}
           </motion.div>
         )}
-        
-        {currentWeather && (
-          <WeatherDisplay data={currentWeather} />
-        )}
-        
-        {forecast && (
-          <Forecast data={forecast} />
-        )}
+
+        {currentWeather && <WeatherDisplay data={currentWeather} />}
+
+        {forecast && <Forecast data={forecast} />}
       </main>
     </div>
   );

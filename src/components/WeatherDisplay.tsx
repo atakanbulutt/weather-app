@@ -1,4 +1,4 @@
-import React, { } from 'react';
+import React from 'react';
 import { WeatherData } from '../types/weather';
 import { translations } from '../i18n/translations';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -15,10 +15,13 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ data }) => {
   const t = translations[language];
 
   const formatTime = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleTimeString(language === 'tr' ? 'tr-TR' : 'en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    return new Date(timestamp * 1000).toLocaleTimeString(
+      language === 'tr' ? 'tr-TR' : 'en-US',
+      {
+        hour: '2-digit',
+        minute: '2-digit',
+      }
+    );
   };
 
   const getWeatherIcon = (iconCode: string) => {
@@ -33,17 +36,23 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ data }) => {
       className="weather-display"
     >
       <div className="weather-header">
-        <h2>{data.name}, {data.sys.country}</h2>
+        <h2>
+          {data.name}, {data.sys.country}
+        </h2>
         <div className="weather-main">
-          <img 
-            src={getWeatherIcon(data.weather[0].icon)} 
+          <img
+            src={getWeatherIcon(data.weather[0].icon)}
             alt={data.weather[0].description}
             className="weather-icon"
           />
           <div className="temperature">
-            <span className="temp-value">{Math.round(data.main.temp)}{getUnitSymbol()}</span>
+            <span className="temp-value">
+              {Math.round(data.main.temp)}
+              {getUnitSymbol()}
+            </span>
             <span className="temp-feels-like">
-              {t.weather.feelsLike}: {Math.round(data.main.feels_like)}{getUnitSymbol()}
+              {t.weather.feelsLike}: {Math.round(data.main.feels_like)}
+              {getUnitSymbol()}
             </span>
           </div>
         </div>
@@ -81,4 +90,3 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ data }) => {
 };
 
 export default WeatherDisplay;
-
