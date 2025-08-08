@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { ForecastData } from '../types/weather';
 import { translations } from '../i18n/translations';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useUnit } from '../contexts/UnitContext';
 import { motion } from 'framer-motion';
 
 interface ForecastProps {
@@ -11,6 +12,7 @@ interface ForecastProps {
 const Forecast: React.FC<ForecastProps> = React.memo(({ data }) => {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const { language } = useLanguage();
+  const { getUnitSymbol } = useUnit();
   const t = translations[language];
 
   const formatDate = useCallback((timestamp: number) => {
@@ -72,8 +74,8 @@ const Forecast: React.FC<ForecastProps> = React.memo(({ data }) => {
                 className="weather-icon"
               />
               <div className="day-temp">
-                <span className="temp-max">{Math.round(day.main.temp_max)}°</span>
-                <span className="temp-min">{Math.round(day.main.temp_min)}°</span>
+                <span className="temp-max">{Math.round(day.main.temp_max)}{getUnitSymbol()}</span>
+                <span className="temp-min">{Math.round(day.main.temp_min)}{getUnitSymbol()}</span>
               </div>
             </div>
             
@@ -94,13 +96,13 @@ const Forecast: React.FC<ForecastProps> = React.memo(({ data }) => {
             <div className="detail-item">
               <span className="detail-label">{t.weather.temperature}</span>
               <span className="detail-value">
-                {Math.round(dailyForecasts[selectedDay].main.temp)}°C
+                {Math.round(dailyForecasts[selectedDay].main.temp)}{getUnitSymbol()}
               </span>
             </div>
             <div className="detail-item">
               <span className="detail-label">{t.weather.feelsLike}</span>
               <span className="detail-value">
-                {Math.round(dailyForecasts[selectedDay].main.feels_like)}°C
+                {Math.round(dailyForecasts[selectedDay].main.feels_like)}{getUnitSymbol()}
               </span>
             </div>
             <div className="detail-item">

@@ -1,7 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { } from 'react';
 import { WeatherData } from '../types/weather';
 import { translations } from '../i18n/translations';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useUnit } from '../contexts/UnitContext';
 import { motion } from 'framer-motion';
 
 interface WeatherDisplayProps {
@@ -10,6 +11,7 @@ interface WeatherDisplayProps {
 
 const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ data }) => {
   const { language } = useLanguage();
+  const { getUnitSymbol } = useUnit();
   const t = translations[language];
 
   const formatTime = (timestamp: number) => {
@@ -39,9 +41,9 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ data }) => {
             className="weather-icon"
           />
           <div className="temperature">
-            <span className="temp-value">{Math.round(data.main.temp)}°C</span>
+            <span className="temp-value">{Math.round(data.main.temp)}{getUnitSymbol()}</span>
             <span className="temp-feels-like">
-              {t.weather.feelsLike}: {Math.round(data.main.feels_like)}°C
+              {t.weather.feelsLike}: {Math.round(data.main.feels_like)}{getUnitSymbol()}
             </span>
           </div>
         </div>

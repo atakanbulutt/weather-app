@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useUnit } from '../contexts/UnitContext';
 import { translations } from '../i18n/translations';
 import { SavedCity } from '../types/weather';
 import { WeatherService } from '../services/weatherService';
@@ -14,9 +15,48 @@ const DashboardPage: React.FC = () => {
   const [success, setSuccess] = useState<string | null>(null); 
   const [refreshProgress, setRefreshProgress] = useState<{ completed: number; total: number }>({ completed: 0, total: 0 });
   const { language } = useLanguage();
+  const { unit, getUnitSymbol } = useUnit();
   const t = translations[language];
   const queryClient = useQueryClient();
 
+  const [citiesLoaded, setCitiesLoaded] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('savedCities');
+    if (saved) {
+      setSavedCities(JSON.parse(saved));
+    }
+    setCitiesLoaded(true);
+  }, []);
+  
+  useEffect(() => {
+    if (!citiesLoaded || savedCities.length === 0) {
+      console.log('savedCities henüz yüklenmedi veya boş');
+      return;
+    }
+  
+    console.log('unit/language değişti, savedCities güncelleniyor');
+  
+    const updateAllCities = async () => {
+      const updatedCities = await Promise.all(
+        savedCities.map(async (city) => {
+          try {
+            const weatherData = await WeatherService.getCurrentWeather(city.name, unit, language === 'tr' ? 'tr' : 'en');
+            return { ...city, weatherData, lastUpdated: Date.now() };
+          } catch (error) {
+            console.error(`Hava durumu alınamadı: ${city.name}`, error);
+            return city;
+          }
+        })
+      );
+  
+      setSavedCities(updatedCities);
+      localStorage.setItem('savedCities', JSON.stringify(updatedCities));
+    };
+  
+    updateAllCities();
+  }, [unit, language, citiesLoaded]);
+  
   useEffect(() => {
     const saved = localStorage.getItem('savedCities');
     if (saved) {
@@ -33,7 +73,6 @@ const DashboardPage: React.FC = () => {
   const removeCity = (cityId: number) => {
     const city = savedCities.find(c => c.id === cityId);
     if (city) {
-      // Cache'den şehir verilerini temizle
       queryClient.removeQueries({ queryKey: ['weather', city.name] });
       queryClient.removeQueries({ queryKey: ['forecast'] });
     }
@@ -43,10 +82,9 @@ const DashboardPage: React.FC = () => {
     localStorage.setItem('savedCities', JSON.stringify(updated));
   };
 
-  // React Query mutation for adding city
   const addCityMutation = useMutation({
     mutationFn: async (cityName: string) => {
-      return await WeatherService.getCurrentWeather(cityName, 'metric', language === 'tr' ? 'tr' : 'en');
+      return await WeatherService.getCurrentWeather(cityName, unit, language === 'tr' ? 'tr' : 'en');
     },
     onSuccess: (weatherData) => {
       const isDuplicate = savedCities.some(city => 
@@ -76,16 +114,15 @@ const DashboardPage: React.FC = () => {
       setSuccess(`${weatherData.name} başarıyla eklendi!`);
       setTimeout(() => setSuccess(null), 2000);
 
-      // Cache'e weather data'yı kaydet
-      queryClient.setQueryData(['weather', weatherData.name, language], weatherData);
+      queryClient.setQueryData(['weather', weatherData.name, language, unit], weatherData);
       
-      // Forecast için prefetch yap
+    
       queryClient.prefetchQuery({
-        queryKey: ['forecast', weatherData.coord.lat, weatherData.coord.lon, language],
+        queryKey: ['forecast', weatherData.coord.lat, weatherData.coord.lon, language, unit],
         queryFn: () => WeatherService.getForecast(
           weatherData.coord.lat,
           weatherData.coord.lon,
-          'metric',
+          unit,
           language
         ),
         staleTime: 15 * 60 * 1000,
@@ -97,10 +134,9 @@ const DashboardPage: React.FC = () => {
     },
   });
 
-  // React Query mutation for updating city weather
   const updateCityWeatherMutation = useMutation({
     mutationFn: async ({ cityName, cityId }: { cityName: string; cityId: number }) => {
-      const weatherData = await WeatherService.getCurrentWeather(cityName, 'metric', language === 'tr' ? 'tr' : 'en');
+      const weatherData = await WeatherService.getCurrentWeather(cityName, unit, language === 'tr' ? 'tr' : 'en');
       return { weatherData, cityId };
     },
     onSuccess: ({ weatherData, cityId }) => {
@@ -112,12 +148,10 @@ const DashboardPage: React.FC = () => {
       setSavedCities(updatedCities);
       localStorage.setItem('savedCities', JSON.stringify(updatedCities));
 
-      // Cache'i güncelle
-      queryClient.setQueryData(['weather', weatherData.name, language], weatherData);
+      queryClient.setQueryData(['weather', weatherData.name, language, unit], weatherData);
       
-      // Forecast cache'ini invalidate et
       queryClient.invalidateQueries({ 
-        queryKey: ['forecast', weatherData.coord.lat, weatherData.coord.lon, language] 
+        queryKey: ['forecast', weatherData.coord.lat, weatherData.coord.lon, language, unit] 
       });
     },
     onError: (error: Error) => {
@@ -125,44 +159,41 @@ const DashboardPage: React.FC = () => {
     },
   });
 
-  // Optimized batch refresh with rate limiting
+
   const refreshAllWeatherMutation = useMutation({
     mutationFn: async (cities: SavedCity[]) => {
       setRefreshProgress({ completed: 0, total: cities.length });
       
-      // Batch processing with rate limiting (3 requests at a time)
       const batchSize = 3;
       const updatedCities: SavedCity[] = [];
       
       for (let i = 0; i < cities.length; i += batchSize) {
         const batch = cities.slice(i, i + batchSize);
         
-        // Process batch in parallel
         const batchResults = await Promise.allSettled(
           batch.map(async (city) => {
             try {
-              const weatherData = await WeatherService.getCurrentWeather(city.name, 'metric', language === 'tr' ? 'tr' : 'en');
+              const weatherData = await WeatherService.getCurrentWeather(city.name, unit, language === 'tr' ? 'tr' : 'en');
               return { ...city, weatherData, lastUpdated: Date.now() };
             } catch (error) {
               console.error(`Error updating weather for ${city.name}:`, error);
-              return city; // Return original city if update fails
+              return city;
             }
           })
         );
         
-        // Add successful results to updated cities
         batchResults.forEach((result, index) => {
           if (result.status === 'fulfilled') {
             updatedCities.push(result.value);
           } else {
-            updatedCities.push(batch[index]); // Keep original if failed
+            updatedCities.push(batch[index]); 
           }
         });
         
-        // Update progress
+      
         setRefreshProgress({ completed: Math.min(i + batchSize, cities.length), total: cities.length });
         
-        // Rate limiting: wait 500ms between batches
+      
         if (i + batchSize < cities.length) {
           await new Promise(resolve => setTimeout(resolve, 500));
         }
@@ -174,14 +205,14 @@ const DashboardPage: React.FC = () => {
       setSavedCities(updatedCities);
       localStorage.setItem('savedCities', JSON.stringify(updatedCities));
 
-      // Tüm cache'leri güncelle
+    
       updatedCities.forEach(city => {
         if (city.weatherData) {
-          queryClient.setQueryData(['weather', city.name, language], city.weatherData);
+          queryClient.setQueryData(['weather', city.name, language, unit], city.weatherData);
         }
       });
       
-      // Progress'i sıfırla
+    
       setRefreshProgress({ completed: 0, total: 0 });
     },
     onError: (error: Error) => {
@@ -207,7 +238,7 @@ const DashboardPage: React.FC = () => {
   };
 
   const formatTemperature = (temp: number) => {
-    return `${Math.round(temp)}°C`;
+    return `${Math.round(temp)}${getUnitSymbol()}`;
   };
 
   const getWeatherIcon = (iconCode: string) => {
@@ -219,7 +250,7 @@ const DashboardPage: React.FC = () => {
     return descriptions[description] || description;
   };
 
-  // Combined loading state
+
   const isLoading = addCityMutation.isPending || 
                    updateCityWeatherMutation.isPending || 
                    refreshAllWeatherMutation.isPending;

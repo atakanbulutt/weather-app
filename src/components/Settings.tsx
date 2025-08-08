@@ -1,12 +1,14 @@
 import React from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useUnit } from '../contexts/UnitContext';
 import { translations } from '../i18n/translations';
 import { motion } from 'framer-motion';
 
 const Settings: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const { language, setLanguage } = useLanguage();
+  const { unit, setUnit } = useUnit();
   const t = translations[language];
 
   return (
@@ -66,6 +68,32 @@ const Settings: React.FC = () => {
               onChange={() => setLanguage('en')}
             />
             {t.settings.english}
+          </label>
+        </div>
+      </div>
+
+      <div className="settings-section">
+        <h4>{t.settings.units}</h4>
+        <div className="setting-item">
+          <label className="setting-label">
+            <input
+              type="radio"
+              name="unit"
+              value="metric"
+              checked={unit === 'metric'}
+              onChange={() => setUnit('metric')}
+            />
+            {t.settings.celsius}
+          </label>
+          <label className="setting-label">
+            <input
+              type="radio"
+              name="unit"
+              value="imperial"
+              checked={unit === 'imperial'}
+              onChange={() => setUnit('imperial')}
+            />
+            {t.settings.fahrenheit}
           </label>
         </div>
       </div>

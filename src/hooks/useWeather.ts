@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { WeatherService } from '../services/weatherService';
 import { WeatherData, ForecastData } from '../types/weather';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useUnit } from '../contexts/UnitContext';
 
 export const useWeather = () => {
   const [currentWeather, setCurrentWeather] = useState<WeatherData | null>(null);
@@ -10,6 +11,7 @@ export const useWeather = () => {
   const [error, setError] = useState<string | null>(null);
   const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt' | 'unknown'>('unknown');
   const { language } = useLanguage();
+  const { unit } = useUnit();
   const queryClient = useQueryClient();
 
   // LocalStorage'dan weather data'yı yükle
@@ -47,10 +49,10 @@ export const useWeather = () => {
 
   // React Query ile weather data fetching - daha stabil query key
   const weatherQuery = useQuery({
-    queryKey: ['weather', currentWeather?.name || 'current', language],
+    queryKey: ['weather', currentWeather?.name || 'current', language, unit],
     queryFn: async () => {
       if (!currentWeather?.name) return null;
-      return await WeatherService.getCurrentWeather(currentWeather.name, 'metric', language);
+      return await WeatherService.getCurrentWeather(currentWeather.name, unit, language);
     },
     enabled: !!currentWeather?.name,
     staleTime: 10 * 60 * 1000, // 10 dakika
@@ -61,13 +63,13 @@ export const useWeather = () => {
 
   // React Query ile forecast data fetching - daha stabil query key
   const forecastQuery = useQuery({
-    queryKey: ['forecast', currentWeather?.coord?.lat || 0, currentWeather?.coord?.lon || 0, language],
+    queryKey: ['forecast', currentWeather?.coord?.lat || 0, currentWeather?.coord?.lon || 0, language, unit],
     queryFn: async () => {
       if (!currentWeather?.coord) return null;
       return await WeatherService.getForecast(
         currentWeather.coord.lat,
         currentWeather.coord.lon,
-        'metric',
+        unit,
         language
       );
     },
@@ -81,7 +83,7 @@ export const useWeather = () => {
   // Mutation for fetching weather by city
   const fetchWeatherByCityMutation = useMutation({
     mutationFn: async (city: string) => {
-      const weatherData = await WeatherService.getCurrentWeather(city, 'metric', language);
+      const weatherData = await WeatherService.getCurrentWeather(city, unit, language);
       return weatherData;
     },
     onSuccess: (weatherData) => {
@@ -89,15 +91,15 @@ export const useWeather = () => {
       setError(null);
       
       // Cache'e weather data'yı kaydet
-      queryClient.setQueryData(['weather', weatherData.name, language], weatherData);
+      queryClient.setQueryData(['weather', weatherData.name, language, unit], weatherData);
       
       // Forecast için prefetch yap
       queryClient.prefetchQuery({
-        queryKey: ['forecast', weatherData.coord.lat, weatherData.coord.lon, language],
+        queryKey: ['forecast', weatherData.coord.lat, weatherData.coord.lon, language, unit],
         queryFn: () => WeatherService.getForecast(
           weatherData.coord.lat,
           weatherData.coord.lon,
-          'metric',
+          unit,
           language
         ),
         staleTime: 15 * 60 * 1000,
@@ -111,7 +113,7 @@ export const useWeather = () => {
   // Mutation for fetching weather by location
   const fetchWeatherByLocationMutation = useMutation({
     mutationFn: async ({ lat, lon }: { lat: number; lon: number }) => {
-      const weatherData = await WeatherService.getWeatherByCoords(lat, lon, 'metric', language);
+      const weatherData = await WeatherService.getWeatherByCoords(lat, lon, unit, language);
       return weatherData;
     },
     onSuccess: (weatherData) => {
@@ -119,15 +121,15 @@ export const useWeather = () => {
       setError(null);
       
       // Cache'e weather data'yı kaydet
-      queryClient.setQueryData(['weather', weatherData.name, language], weatherData);
+      queryClient.setQueryData(['weather', weatherData.name, language, unit], weatherData);
       
       // Forecast için prefetch yap
       queryClient.prefetchQuery({
-        queryKey: ['forecast', weatherData.coord.lat, weatherData.coord.lon, language],
+        queryKey: ['forecast', weatherData.coord.lat, weatherData.coord.lon, language, unit],
         queryFn: () => WeatherService.getForecast(
           weatherData.coord.lat,
           weatherData.coord.lon,
-          'metric',
+          unit,
           language
         ),
         staleTime: 15 * 60 * 1000,
