@@ -1,46 +1,239 @@
-# Getting Started with Create React App
+# 🌤️ Hava Durumu Uygulaması (Weather App)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Modern, responsive ve kullanıcı dostu bir hava durumu uygulaması. React, TypeScript ve OpenWeatherMap API kullanılarak geliştirilmiştir.
 
-## Available Scripts
+## ✨ Özellikler
 
-In the project directory, you can run:
+### 🌍 Temel Özellikler
+- **Gerçek Zamanlı Hava Durumu**: Mevcut hava durumu bilgileri
+- **5 Günlük Tahmin**: Detaylı hava durumu tahmini
+- **Konum Tabanlı Arama**: GPS konumunuzu kullanarak otomatik hava durumu
+- **Şehir Arama**: Dünya genelinde şehir arama özelliği
+- **Responsive Tasarım**: Mobil, tablet ve masaüstü uyumlu
 
-### `npm start`
+### 🎨 Kullanıcı Deneyimi
+- **Açık/Koyu Tema**: Otomatik tema değiştirme
+- **Çoklu Dil Desteği**: Türkçe ve İngilizce
+- **Birim Seçenekleri**: Celsius ve Fahrenheit
+- **Animasyonlar**: Framer Motion ile akıcı geçişler
+- **Offline Desteği**: LocalStorage ile veri saklama
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### 🔧 Teknik Özellikler
+- **React Query**: Gelişmiş veri yönetimi ve cache
+- **TypeScript**: Tip güvenliği
+- **Context API**: Durum yönetimi
+- **React Router**: Sayfa yönlendirme
+- **i18next**: Uluslararasılaştırma
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## 🚀 Kurulum
 
-### `npm test`
+### Gereksinimler
+- Node.js (v16 veya üzeri)
+- npm veya yarn
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Adım Adım Kurulum
 
-### `npm run build`
+1. **Projeyi klonlayın**
+```bash
+git clone <repository-url>
+cd weather-app
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+2. **Bağımlılıkları yükleyin**
+```bash
+npm install
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+3. **Uygulamayı başlatın**
+```bash
+npm start
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Uygulama `http://localhost:3000` adresinde açılacaktır.
 
-### `npm run eject`
+## 📱 Kullanım
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+### Ana Sayfa
+- **Arama Çubuğu**: Şehir adı girerek hava durumu arayın
+- **Konum Butonu**: GPS konumunuzu kullanarak hava durumu alın
+- **Hava Durumu Kartı**: Mevcut hava durumu bilgileri
+- **Tahmin Kartı**: 5 günlük hava durumu tahmini
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Dashboard
+- Kayıtlı şehirlerinizi görüntüleyin
+- Yeni şehir ekleyin
+- Şehirleri kaldırın
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+### Ayarlar
+- **Tema**: Açık/Koyu tema seçimi
+- **Dil**: Türkçe/İngilizce dil seçimi
+- **Birim**: Celsius/Fahrenheit sıcaklık birimi
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+## 🛠️ Teknik Detaylar
 
-## Learn More
+### Proje Yapısı
+```
+src/
+├── components/          # UI bileşenleri
+│   ├── Forecast.tsx    # Hava durumu tahmini
+│   ├── SearchBar.tsx   # Arama çubuğu
+│   ├── Settings.tsx    # Ayarlar bileşeni
+│   └── WeatherDisplay.tsx # Hava durumu gösterimi
+├── contexts/           # React Context'leri
+│   ├── LanguageContext.tsx
+│   ├── ThemeContext.tsx
+│   └── UnitContext.tsx
+├── hooks/              # Custom React hooks
+│   └── useWeather.ts   # Hava durumu veri yönetimi
+├── i18n/               # Uluslararasılaştırma
+│   └── translations.ts
+├── pages/              # Sayfa bileşenleri
+│   ├── DashboardPage.tsx
+│   ├── HomePage.tsx
+│   └── SettingsPage.tsx
+├── services/           # API servisleri
+│   └── weatherService.ts
+├── styles/             # CSS stilleri
+│   └── global.css
+└── types/              # TypeScript tip tanımları
+    └── weather.ts
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### API Entegrasyonu
+- **OpenWeatherMap API**: Hava durumu verileri
+- **Geolocation API**: Kullanıcı konumu
+- **React Query**: Veri fetching ve cache yönetimi
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Veri Yönetimi
+- **LocalStorage**: Kullanıcı tercihleri ve hava durumu verileri
+- **React Query Cache**: API verilerinin önbelleklenmesi
+- **Context API**: Uygulama durumu yönetimi
+
+## 🎯 Özellik Detayları
+
+### Hava Durumu Bilgileri
+- Sıcaklık (mevcut, hissedilen, min/max)
+- Nem oranı
+- Rüzgar hızı ve yönü
+- Basınç
+- Görüş mesafesi
+- Güneş doğuşu/batışı saatleri
+- Hava durumu açıklaması
+
+### Tahmin Özellikleri
+- 5 günlük detaylı tahmin
+- Saatlik hava durumu değişimi
+- Yağış olasılığı
+- Sıcaklık grafikleri
+
+### Kullanıcı Tercihleri
+- Tema tercihi (açık/koyu)
+- Dil seçimi (Türkçe/İngilizce)
+- Sıcaklık birimi (Celsius/Fahrenheit)
+- Otomatik konum izni
+
+## 🔧 Geliştirme
+
+### Mevcut Scriptler
+```bash
+npm start          # Geliştirme sunucusunu başlat
+npm run build      # Production build oluştur
+npm test           # Testleri çalıştır
+npm run lint       # ESLint kontrolü
+npm run lint:fix   # ESLint düzeltmeleri
+npm run format     # Prettier formatlama
+```
+
+### Yeni Özellik Ekleme
+1. Yeni bileşen oluşturun (`src/components/`)
+2. Tip tanımlarını ekleyin (`src/types/`)
+3. Çevirileri ekleyin (`src/i18n/translations.ts`)
+4. Stil dosyalarını güncelleyin (`src/styles/`)
+
+## 🌐 API Konfigürasyonu
+
+### OpenWeatherMap API
+- **Base URL**: `https://api.openweathermap.org/data/2.5`
+- **API Key**: `src/constants/api.ts` dosyasında tanımlı
+- **Endpoints**:
+  - `/weather`: Mevcut hava durumu
+  - `/forecast`: 5 günlük tahmin
+
+### API Limitleri
+- Ücretsiz plan: 1000 istek/gün
+- Rate limiting: 60 istek/dakika
+
+## 📱 Mobil Optimizasyon
+
+### Responsive Tasarım
+- **Mobile First**: Mobil öncelikli tasarım
+- **Touch Friendly**: Dokunmatik ekran optimizasyonu
+- **Performance**: Hızlı yükleme ve akıcı animasyonlar
+
+### PWA Özellikleri
+- Offline çalışma desteği
+- App-like deneyim
+- Push notification hazırlığı
+
+## 🧪 Test
+
+### Test Stratejisi
+- **Unit Tests**: Bileşen testleri
+- **Integration Tests**: API entegrasyon testleri
+- **E2E Tests**: Kullanıcı senaryoları
+
+### Test Çalıştırma
+```bash
+npm test           # Tüm testleri çalıştır
+npm test -- --watch # Watch modunda test
+npm test -- --coverage # Coverage raporu
+```
+
+## 🚀 Deployment
+
+### Production Build
+```bash
+npm run build
+```
+
+### Deployment Seçenekleri
+- **Vercel**: Otomatik deployment
+- **Netlify**: Static site hosting
+- **GitHub Pages**: Ücretsiz hosting
+- **Firebase Hosting**: Google Cloud hosting
+
+## 🤝 Katkıda Bulunma
+
+### Geliştirme Süreci
+1. Fork yapın
+2. Feature branch oluşturun (`git checkout -b feature/amazing-feature`)
+3. Değişikliklerinizi commit edin (`git commit -m 'Add amazing feature'`)
+4. Branch'inizi push edin (`git push origin feature/amazing-feature`)
+5. Pull Request oluşturun
+
+### Kod Standartları
+- **ESLint**: Kod kalitesi kontrolü
+- **Prettier**: Kod formatlama
+- **TypeScript**: Tip güvenliği
+- **Conventional Commits**: Commit mesaj standartları
+
+## 📄 Lisans
+
+Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için `LICENSE` dosyasına bakın.
+
+## 🙏 Teşekkürler
+
+- **OpenWeatherMap**: Hava durumu API'si
+- **React Team**: Harika framework
+- **Framer Motion**: Animasyon kütüphanesi
+- **React Query**: Veri yönetimi
+
+## 📞 İletişim
+
+- **GitHub**: [Proje Sayfası]
+- **Email**: [İletişim Email'i]
+- **Issues**: [GitHub Issues]
+
+---
+
+⭐ Bu projeyi beğendiyseniz yıldız vermeyi unutmayın!
